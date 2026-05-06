@@ -9,7 +9,7 @@ async def escuchar(client, topic):
     #se utiliza un filtro para escuchar solo los mensajes del tema especificado
     async with client.messages.filter(topic) as messages:
         async for message in messages:
-            logging.info(f"Mensaje recibido en el tema {message.topic}: {message.payload.decode("utf-8")}")
+            logging.info(f"Mensaje recibido en el tema {message.topic}: {message.payload.decode('utf-8')}")
 
 async def main():
     #direccion del broker desde el entorno
@@ -34,7 +34,12 @@ async def main():
             #suscribe a los topicos
             await client.subscribe(topico1)
             await client.subscribe(topico2)
-            
+            #Creacion de las tareas para escuchar los mensajes de cada topico
+            tarea1=asyncio.create_task(escuchar(client, topico1), name="Tarea-Topico1")
+            tarea2=asyncio.create_task(escuchar(client, topico2), name="Tarea-Topico2")
+            #mantener las tareas corriendo para escuchar los mensajes de ambos topicos
+            #gather espera a que ambas tareas terminen, lo cual no sucedera hasta que se salga por interrupcion manual
+            await asyncio.gather(tarea1, tarea2) 
     except aiomqtt.MqttError:
         logging.error(f"Error al conectar al broker MQTT")
 
