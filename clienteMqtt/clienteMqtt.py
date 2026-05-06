@@ -27,6 +27,10 @@ async def main():
         tls_context=tls_context,
         )as client:
             logging.info(f"Conectado al broker MQTT: {broker}")
+
+            #contador con dicionario 
+            cont={"contador": 0}
+            
             #obtiene los topicos del entorno
             topico1=os.environ['TOPICO1']
             topico2=os.environ['TOPICO2']
@@ -34,9 +38,11 @@ async def main():
             #suscribe a los topicos
             await client.subscribe(topico1)
             await client.subscribe(topico2)
+
             #Creacion de las tareas para escuchar los mensajes de cada topico
             tarea1=asyncio.create_task(escuchar(client, topico1), name="Tarea-Topico1")
             tarea2=asyncio.create_task(escuchar(client, topico2), name="Tarea-Topico2")
+
             #mantener las tareas corriendo para escuchar los mensajes de ambos topicos
             #gather espera a que ambas tareas terminen, lo cual no sucedera hasta que se salga por interrupcion manual
             await asyncio.gather(tarea1, tarea2) 
