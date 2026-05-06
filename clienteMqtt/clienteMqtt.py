@@ -11,6 +11,12 @@ async def escuchar(client, topic):
         async for message in messages:
             logging.info(f"Mensaje recibido en el tema {message.topic}: {message.payload.decode('utf-8')}")
 
+async def conteo(cont):
+    while True:
+        await asyncio.sleep(3)
+        cont["contador"] += 1
+        logging.info(f"Contador: {cont['contador']}")
+
 async def main():
     #direccion del broker desde el entorno
     broker = os.environ['SERVIDOR']
@@ -30,7 +36,7 @@ async def main():
 
             #contador con dicionario 
             cont={"contador": 0}
-            
+
             #obtiene los topicos del entorno
             topico1=os.environ['TOPICO1']
             topico2=os.environ['TOPICO2']
@@ -42,10 +48,11 @@ async def main():
             #Creacion de las tareas para escuchar los mensajes de cada topico
             tarea1=asyncio.create_task(escuchar(client, topico1), name="Tarea-Topico1")
             tarea2=asyncio.create_task(escuchar(client, topico2), name="Tarea-Topico2")
+            tarea3=asyncio.create_task(conteo(cont), name="Tarea-Conteo")
 
             #mantener las tareas corriendo para escuchar los mensajes de ambos topicos
             #gather espera a que ambas tareas terminen, lo cual no sucedera hasta que se salga por interrupcion manual
-            await asyncio.gather(tarea1, tarea2) 
+            await asyncio.gather(tarea1, tarea2, tarea3) 
     except aiomqtt.MqttError:
         logging.error(f"Error al conectar al broker MQTT")
 
