@@ -17,6 +17,13 @@ async def conteo(cont):
         cont["contador"] += 1
         logging.info(f"Contador: {cont['contador']}")
 
+async def publicar(client, cont, topic):
+    while True:
+        await asyncio.sleep(5)
+        valor_publicar = cont["contador"]
+        await client.publish(topic, payload=str(valor_publicar))
+        logging.info(f"Publicado en el tema {topic}: {valor_publicar}")
+
 async def main():
     #direccion del broker desde el entorno
     broker = os.environ['SERVIDOR']
@@ -49,10 +56,12 @@ async def main():
             tarea1=asyncio.create_task(escuchar(client, topico1), name="Tarea-Topico1")
             tarea2=asyncio.create_task(escuchar(client, topico2), name="Tarea-Topico2")
             tarea3=asyncio.create_task(conteo(cont), name="Tarea-Conteo")
+            tarea4=asyncio.create_task(publicar(client, cont, os.environ['TOPICO3']), name="Tarea-Publicar")
 
             #mantener las tareas corriendo para escuchar los mensajes de ambos topicos
             #gather espera a que ambas tareas terminen, lo cual no sucedera hasta que se salga por interrupcion manual
-            await asyncio.gather(tarea1, tarea2, tarea3) 
+            await asyncio.gather(tarea1, tarea2, tarea3, tarea4) 
+
     except aiomqtt.MqttError:
         logging.error(f"Error al conectar al broker MQTT")
 
