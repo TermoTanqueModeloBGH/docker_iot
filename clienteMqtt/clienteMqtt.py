@@ -1,14 +1,19 @@
 import asyncio, ssl, certifi, logging, os
 import aiomqtt
 #se coloca taskname para identificar la corrutina que se esta ejecutando
-logging.basicConfig(format='%(asctime)s -[%(taskname)s] - %(levelname)s:%(message)s', 
+logging.basicConfig(format='%(asctime)s -[%(taskName)s] - %(levelname)s:%(message)s', 
 level=logging.INFO, 
 datefmt='%d/%m/%Y %H:%M:%S %z')
 
+async def escuchar(client, topic):
+    #se utiliza un filtro para escuchar solo los mensajes del tema especificado
+    async with client.messages.filter(topic) as messages:
+        async for message in messages:
+            logging.info(f"Mensaje recibido en el tema {message.topic}: {message.payload.decode("utf-8")}")
 
 async def main():
     #direccion del broker desde el entorno
-    broker = os.getenv('SERVIDOR')
+    broker = os.environ['SERVIDOR']
     #Todo esto es el certificado
     tls_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     tls_context.verify_mode = ssl.CERT_REQUIRED
@@ -20,9 +25,16 @@ async def main():
         broker,
         port=8883,
         tls_context=tls_context,
-        ) as client:
-            logging.info("Conectado al broker MQTT: {broker}")
-            #suscribirse a un tema
+        )as client:
+            logging.info(f"Conectado al broker MQTT: {broker}")
+            #obtiene los topicos del entorno
+            topico1=os.environ['TOPICO1']
+            topico2=os.environ['TOPICO2']
+
+            #suscribe a los topicos
+            await client.subscribe(topico1)
+            await client.subscribe(topico2)
+            
     except aiomqtt.MqttError:
         logging.error(f"Error al conectar al broker MQTT")
 

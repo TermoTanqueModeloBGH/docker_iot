@@ -1,4 +1,5 @@
-FROM python:3.11-slim
+#para que funcione el taskName se requiere esta version de python
+FROM python:3.12-slim
 
 WORKDIR /app
 
