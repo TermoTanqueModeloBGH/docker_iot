@@ -6,10 +6,9 @@ level=logging.INFO,
 datefmt='%d/%m/%Y %H:%M:%S %z')
 
 async def escuchar(client, topic):
-    #se utiliza un filtro para escuchar solo los mensajes del tema especificado
-    async with client.messages.filter(topic) as messages:
-        async for message in messages:
-            logging.info(f"Mensaje recibido en el tema {message.topic}: {message.payload.decode('utf-8')}")
+     async for message in client.messages:
+        if message.topic.matches(topic):
+            logging.info(f"Mensaje recibido en el tema {message.topic}: "f"{message.payload.decode('utf-8')}")
 
 async def conteo(cont):
     while True:
