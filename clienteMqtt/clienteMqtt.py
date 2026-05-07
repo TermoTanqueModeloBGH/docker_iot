@@ -5,10 +5,19 @@ logging.basicConfig(format='%(asctime)s -[%(taskName)s] - %(levelname)s:%(messag
 level=logging.INFO, 
 datefmt='%d/%m/%Y %H:%M:%S %z')
 
-async def escuchar(client, topic):
+async def escuchar(client, t1, t2):
      async for message in client.messages:
-        if message.topic.matches(topic):
-            logging.info(f"Mensaje recibido en el tema {message.topic}: "f"{message.payload.decode('utf-8')}")
+        payload=message.payload.decode('utf-8')
+        if message.topic.matches(t1):
+            asyncio.create_task(atencion1(message.topic, payload), name="Tarea-Atencion1")
+        elif message.topic.matches(t2):
+            asyncio.create_task(atencion2(message.topic, payload), name="Tarea-Atencion2")
+
+async def atencion1(topico, dato):
+    logging.info(f"Mensaje recibido en {topico}: {dato}")
+
+async def atencion2(topico, dato):
+    logging.info(f"Mensaje recibido en {topico}: {dato}")
 
 async def conteo(cont):
     while True:
@@ -52,14 +61,13 @@ async def main():
             await client.subscribe(topico2)
 
             #Creacion de las tareas para escuchar los mensajes de cada topico
-            tarea1=asyncio.create_task(escuchar(client, topico1), name="Tarea-Topico1")
-            tarea2=asyncio.create_task(escuchar(client, topico2), name="Tarea-Topico2")
-            tarea3=asyncio.create_task(conteo(cont), name="Tarea-Conteo")
-            tarea4=asyncio.create_task(publicar(client, cont, os.environ['TOPICO3']), name="Tarea-Publicar")
+            tarea1=asyncio.create_task(escuchar(client, topico1, topico2), name="Tarea-escuchar")
+            tarea2=asyncio.create_task(conteo(cont), name="Tarea-Conteo")
+            tarea3=asyncio.create_task(publicar(client, cont, os.environ['TOPICO3']), name="Tarea-Publicar")
 
             #mantener las tareas corriendo para escuchar los mensajes de ambos topicos
             #gather espera a que ambas tareas terminen, lo cual no sucedera hasta que se salga por interrupcion manual
-            await asyncio.gather(tarea1, tarea2, tarea3, tarea4) 
+            await asyncio.gather(tarea1, tarea2, tarea3) 
 
     except aiomqtt.MqttError:
         logging.error(f"Error al conectar al broker MQTT")
