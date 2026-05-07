@@ -9,9 +9,9 @@ async def escuchar(client, t1, t2):
      async for message in client.messages:
         payload=message.payload.decode('utf-8')
         if message.topic.matches(t1):
-            asyncio.create_task(atencion1(message.topic, payload), name="Tarea-Atencion1")
+            asyncio.create_task(atencion1(message.topic, payload), name="Topico-1")
         elif message.topic.matches(t2):
-            asyncio.create_task(atencion2(message.topic, payload), name="Tarea-Atencion2")
+            asyncio.create_task(atencion2(message.topic, payload), name="Topico-2")
 
 async def atencion1(topico, dato):
     logging.info(f"Mensaje recibido en {topico}: {dato}")
@@ -61,9 +61,9 @@ async def main():
             await client.subscribe(topico2)
 
             #Creacion de las tareas para escuchar los mensajes de cada topico
-            tarea1=asyncio.create_task(escuchar(client, topico1, topico2), name="Tarea-escuchar")
-            tarea2=asyncio.create_task(conteo(cont), name="Tarea-Conteo")
-            tarea3=asyncio.create_task(publicar(client, cont, os.environ['TOPICO3']), name="Tarea-Publicar")
+            tarea1=asyncio.create_task(escuchar(client, topico1, topico2), name="Tarea Escuchar")
+            tarea2=asyncio.create_task(conteo(cont), name="Tarea Conteo")
+            tarea3=asyncio.create_task(publicar(client, cont, os.environ['TOPICO3']), name="Tarea Publicar")
 
             #mantener las tareas corriendo para escuchar los mensajes de ambos topicos
             #gather espera a que ambas tareas terminen, lo cual no sucedera hasta que se salga por interrupcion manual
