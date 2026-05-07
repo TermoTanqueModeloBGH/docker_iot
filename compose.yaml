@@ -22,7 +22,7 @@ services:
       - 8080:80
     depends_on:
       - mariadb
-  clientemqtt:
+  clientemqtt: #Servicio del cliente MQTT
     image: clientemqtt
     build:
       context: ./clienteMqtt
