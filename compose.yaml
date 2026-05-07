@@ -9,16 +9,16 @@ services:
       - TZ=America/Argentina/Buenos_Aires
     volumes:
       - ./mariadb:/var/lib/mysql:Z
-    ports:
+    ports: #mapea el puerto, docker muestra hacia afuer el puerto 3306
       - 3306:3306
-    restart: unless-stopped
+    restart: unless-stopped #si falla el servidor se reinicia hasta que yo lo detenga
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin #interfaz web para manejar bases de datos mysql/mariadb
     container_name: phpmyadmin
     restart: always
-    environment:
+    environment: #para que se conecte a mariadb, si no se pone en el logging voy a tener que hacerlo manualmente cada vez que se levante el contenedor
       - PMA_HOST=mariadb
     ports:
       - 8080:80
-    depends_on:
+    depends_on: #el servicio phpmyadmin depende de mariadb, si no se levanta mariadb no se levanta phpmyadmin
       - mariadb
