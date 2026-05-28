@@ -27,9 +27,9 @@ async def kill(update, context):
     logging.info(update)
     logging.info(context.args)
     if context.args and context.args[0] == '@e':
-        await context.bot.send_animation(update.message.chat.id, "CgACAgEAAxkBAAICI2oYKdAqh4YkBCLifiVJZlRXy74-AAKUBwACZ_PBRLgV_qZf-9kGOwQ")
+        await context.bot.send_animation(update.message.chat.id, "CgACAgEAAxkBAAMHahiDH-LSVL3OEYpcvlzY3StksLkAAmoHAAIwGMhETjK1qatEDks7BA")
         await asyncio.sleep(6)
-        await context.bot.send_message(update.message.chat.id, text="¡¡¡Ahora están todos muertos!!!")
+        await context.bot.send_message(update.message.chat.id, text="Esta loco lo tenemos que matar")
     else:
         await context.bot.send_message(update.message.chat.id, text="☠️ ¡¡¡Esto es muy peligroso!!! ☠️")
         
