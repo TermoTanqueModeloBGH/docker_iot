@@ -1,104 +1,129 @@
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-import logging, os, asyncio, aiomysql, traceback, locale
-import matplotlib.pyplot as plt
-from io import BytesIO
+import os
+import logging
+import ssl
+import certifi
+import aiomqtt
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-token=os.environ["TB_TOKEN"]
-
+#Para ver los logs del bot
 logging.basicConfig(format='%(asctime)s - TelegramBot - %(levelname)s - %(message)s', level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+#Token del bot, se obtiene de la variable de entorno
+token=os.environ["TB_TOKEN"]
+
+#Configuración del broker MQTT
+MQTT_BROKER = os.environ.get("MQTT_SERVER", "mosquitto") 
+MQTT_PORT = 8883  # Puerto MQTTS seguro con TLS/SSL 
+MQTT_USER = os.environ.get("MQTT_USER", None)
+MQTT_PASS = os.environ.get("MQTT_USER_PASS", None)
+
+#Direccion MAC del pico W
+DEVICE_MAC = os.environ.get("DEVICE_MAC", "AA:BB:CC:DD:EE:FF") 
+
+async def enviar_mqtt(topico_extension: str, payload: str):
+
+    topico_completo = f"{DEVICE_MAC}/{topico_extension}"
+
+    tls_context = ssl.create_default_context(cafile=certifi.where())
+  
+    async with aiomqtt.Client(
+        hostname=MQTT_BROKER,
+        port=MQTT_PORT,
+        username=MQTT_USER,
+        password=MQTT_PASS,
+        tls_context=tls_context
+    )as client:
+        await client.publish(topico_completo, payload=payload, qos=1)
+        logging.info(f"MQTT: Publicado -> Topico: {topico_completo}, Mensaje: {payload}")
+
+# COMANDOS DE TELEGRAM
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logging.info("se conectó: " + str(update.message.from_user.id))
-    if update.message.from_user.first_name:
-        nombre=update.message.from_user.first_name
-    else:
-        nombre=""
-    if update.message.from_user.last_name:
-        apellido=update.message.from_user.last_name
-    else:
-        apellido=""
-    kb = [["temperatura"],["humedad"],["gráfico temperatura"],["gráfico humedad"]]
-    await context.bot.send_message(update.message.chat.id, text="Bienvenido al Bot "+ nombre + " " + apellido,reply_markup=ReplyKeyboardMarkup(kb))
+    "comando /start: bienvenida al usuario junto a los comandos disponibles"
+    mensaje=(
+        "Bienvenido al panel de control del termotasto\n"
+        "Comandos disponibles:\n"
+        "/setpoint <numero> - Establece la temperatura objetivo\n"
+        "/periodo <segundos> - Establece el periodo de lectura del sensor\n"
+        "/modo <auto/manual> - Cambia el modo del termotasto\n"
+        "/rele <on/off> - En modo manual, enciende o apaga el rele\n"
+        "/destello -> Hace parpedear el led fisico del pico W"
+    )
+    await update.message.reply_text(mensaje)
 
-async def acercade(update: Update, context):
-    await context.bot.send_message(update.message.chat.id, text="Este bot fue creado para el curso de IoT FIO")
+async def setpoint(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    "comando /setpoint <numero>: establece la temperatura objetivo"
+    if not context.args:
+        await update.message.reply_text("Uso: /setpoint <numero>. Ejemplo: /setpoint 20")
+        return 
+    valor=context.args[0]
+    try:
+        float(valor)  # Verificar que el valor es un número valido
+        await enviar_mqtt("setpoint", valor)
+        await update.message.reply_text(f"Temperatura objetivo establecida a {valor}°C")
+    except ValueError:
+        await update.message.reply_text("Por favor, ingresa un número válido para el setpoint.")
+    except Exception as e:
+        await update.message.reply_text(f"Error de comunicacion MQTT: {e}")
 
-async def kill(update: Update, context):
-    logging.info(context.args)
-    if context.args and context.args[0] == '@e':
-        await context.bot.send_animation(update.message.chat.id, "CgACAgEAAxkBAAICI2oYKdAqh4YkBCLifiVJZlRXy74-AAKUBwACZ_PBRLgV_qZf-9kGOwQ")
-        await asyncio.sleep(6)
-        await context.bot.send_message(update.message.chat.id, text="¡¡¡Ahora estan todos muertos!!!")
-    else:
-        await context.bot.send_message(update.message.chat.id, text="☠️ ¡¡¡Esto es muy peligroso!!! ☠️")
-        
-async def medicion(update: Update, context):
-    logging.info(update.message.text)
-    sql = f"SELECT timestamp, {update.message.text} FROM mediciones ORDER BY timestamp DESC LIMIT 1"
-    conn = await aiomysql.connect(host=os.environ["MARIADB_SERVER"], port=3306,
-                                    user=os.environ["MARIADB_USER"],
-                                    password=os.environ["MARIADB_USER_PASS"],
-                                    db=os.environ["MARIADB_DB"])
-    async with conn.cursor() as cur:
-        await cur.execute(sql)
-        r = await cur.fetchone()
-        if update.message.text == 'temperatura':
-            unidad = 'ºC'
-        else:
-            unidad = '%'
-        await context.bot.send_message(update.message.chat.id,
-                                    text="La última {} es de {} {},\nregistrada a las {:%H:%M:%S %d/%m/%Y}"
-                                    .format(update.message.text, str(r[1]).replace('.',','), unidad, r[0]))
-        logging.info("La última {} es de {} {}, medida a las {:%H:%M:%S %d/%m/%Y}".format(update.message.text, r[1], unidad, r[0]))
-    conn.close()
+async def periodo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    "comando /periodo <segundos>: establece el periodo de lectura del sensor"
+    if not context.args:
+        await update.message.reply_text("Uso: /periodo <segundos>. Ejemplo: /periodo 10")
+        return 
+    valor=context.args[0]
+    try:
+        int(valor)  # Verificar que el valor es un número valido
+        await enviar_mqtt("periodo", valor)
+        await update.message.reply_text(f"Periodo de lectura establecido a {valor} segundos")
+    except ValueError:
+        await update.message.reply_text("Por favor, ingresa un número válido para el periodo.")
+    except Exception as e:
+        await update.message.reply_text(f"Error de comunicacion MQTT: {e}")
 
-async def graficos(update: Update, context):
-    logging.info(update.message.text)
-    sql = f"""SELECT timestamp, {update.message.text.split()[1]}
-            FROM (
-                SELECT timestamp, {update.message.text.split()[1]},
-                    ROW_NUMBER() OVER (ORDER BY id) AS rn
-                FROM mediciones
-                WHERE timestamp >= NOW() - INTERVAL 1 DAY
-                AND sensor_id LIKE 'sensor_1'
-            ) AS t
-            WHERE rn % 2 = 0
-            ORDER BY timestamp;"""
-    conn = await aiomysql.connect(host=os.environ["MARIADB_SERVER"], port=3306,
-                                    user=os.environ["MARIADB_USER"],
-                                    password=os.environ["MARIADB_USER_PASS"],
-                                    db=os.environ["MARIADB_DB"])
-    async with conn.cursor() as cur:
-        await cur.execute(sql)
-        filas = await cur.fetchall()
+async def modo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    "comando /modo <auto/manual>: cambia el modo del termotasto"
+    if not context.args:
+        await update.message.reply_text("Uso: /modo <auto/manual>. Ejemplo: /modo auto")
+        return
+    
+    modo=context.args[0].lower()
 
-        fig, ax = plt.subplots(figsize=(7, 4))
-        fecha,var=zip(*filas)
-        ax.plot(fecha,var)
-        ax.grid(True, which='both')
-        ax.set_title(update.message.text, fontsize=14, verticalalignment='bottom')
-        ax.set_xlabel('fecha')
-        ax.set_ylabel('unidad')
+    if modo not in ["auto", "manual"]:
+        await update.message.reply_text("Che amigo, ingresa 'auto' o 'manual' para el modo.🤬🤬🤬😡😡🤬🤬🤬👺👹")
+        return
+    
+    try:
+        await enviar_mqtt("modo", modo)
+        await update.message.reply_text(f"Modo cambiado a {modo.upper()}")
+    except Exception as e:
+        await update.message.reply_text(f"Error de comunicacion MQTT: {e}")
 
-        buffer = BytesIO()
-        fig.tight_layout()
-        fig.savefig(buffer, format='png')
-        plt.close()
-        buffer.seek(0)
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=buffer)
-        buffer.close()
-    conn.close()
+async def rele(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    "comando /rele <on/off>: enciende o apaga el rele en modo manual"
+    if not context.args:
+        await update.message.reply_text("Uso: /rele <on/off>. Ejemplo: /rele on")
+        return
+    estado=context.args[0].upper()
+    
+    if estado not in ["ON", "OFF"]:
+        await update.message.reply_text("Por favor, ingresa 'ON' o 'OFF' para el rele.")
+        return
+   
+    Payload_rele = "1" if estado == "ON" else "0"
 
-def main():
-    application = Application.builder().token(token).build()
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('acercade', acercade))
-    application.add_handler(CommandHandler('kill', kill))
-    application.add_handler(MessageHandler(filters.Regex("^(temperatura|humedad)$"), medicion))
-    application.add_handler(MessageHandler(filters.Regex("^(gráfico temperatura|gráfico humedad)$"), graficos))
-    application.run_polling()
+    try:
+        await enviar_mqtt("rele", Payload_rele)
+        await update.message.reply_text(f"Orden enviada para poner el rele {estado}")
+    except Exception as e:
+        await update.message.reply_text(f"Error de comunicacion MQTT: {e}")
 
-if __name__ == '__main__':
-    main()
+async def destello(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    "comando /destello: hace parpadear el led físico del pico W"
+    try:
+        await enviar_mqtt("destello", "1")
+        await update.message.reply_text("Destello activado")
+    except Exception as e:
+        await update.message.reply_text(f"Error de comunicacion MQTT: {e}")
