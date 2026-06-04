@@ -34,7 +34,7 @@ async def enviar_mqtt(topico_extension: str, payload: str):
         username=MQTT_USER,
         password=MQTT_PASS,
         tls_context=tls_context
-    )as client:
+    ) as client:
         await client.publish(topico_completo, payload=payload, qos=1)
         logging.info(f"MQTT: Publicado -> Topico: {topico_completo}, Mensaje: {payload}")
 
