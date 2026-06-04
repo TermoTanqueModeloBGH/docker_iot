@@ -1,0 +1,4 @@
+Flask
+flask-mysqldb
+gunicorn
+argon2-cffi
