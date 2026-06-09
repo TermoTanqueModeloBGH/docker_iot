@@ -132,7 +132,6 @@ async def destello(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Error de comunicacion MQTT: {e}")
 
 #MAIN
-
 def main():
     "funcion principal: configura el bot y lo pone a escuchar los comandos"
     app = Application.builder().token(token).build()
