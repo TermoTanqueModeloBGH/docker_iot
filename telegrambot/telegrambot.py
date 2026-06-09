@@ -16,8 +16,8 @@ token=os.environ["TB_TOKEN"]
 #Configuración del broker MQTT
 MQTT_BROKER = os.environ.get("MQTT_SERVER", "mosquitto") 
 MQTT_PORT = 8883  # Puerto MQTTS seguro con TLS/SSL 
-MQTT_USER = os.environ.get("MQTT_USER", None)
-MQTT_PASS = os.environ.get("MQTT_USER_PASS", None)
+MQTT_USER = os.environ.get("MQTT_USR", None)
+MQTT_PASS = os.environ.get("MQTT_PASS", None)
 
 #Direccion MAC del pico W
 DEVICE_MAC = os.environ.get("DEVICE_MAC", "AA:BB:CC:DD:EE:FF") 
