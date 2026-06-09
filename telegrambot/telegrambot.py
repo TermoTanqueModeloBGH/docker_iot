@@ -27,6 +27,9 @@ async def enviar_mqtt(topico_extension: str, payload: str):
     topico_completo = f"{DEVICE_MAC}/{topico_extension}"
 
     tls_context = ssl.create_default_context(cafile=certifi.where())
+
+    tls_context.check_hostname = False  
+    tls_context.verify_mode = ssl.CERT_NONE  
   
     async with aiomqtt.Client(
         hostname=MQTT_BROKER,
