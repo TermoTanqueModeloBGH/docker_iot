@@ -1,21 +1,19 @@
 const themeSelector = document.getElementById('theme-selector');
-//1. tema guardado al iniciar la pagina
-if(themeSelector) {
-  const savedTheme = localStorage.getItem('theme') || 'light'; //tema claro por defecto
-  //aplicar el tema al atributo de bootstrap en html
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  //sincroniza el valor del selector visualmente con el tema guardado
-  themeSelector.value = savedTheme;
-  //2. escuchar cambios en el selector de tema
+
+if (themeSelector) {
+  // Sincronizar el valor visual del selector con el tema que ya aplicó el HEAD
+  const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+  themeSelector.value = currentTheme;
+
+  // Escuchar cuando el usuario cambia la opción manualmente
   themeSelector.addEventListener('change', (e) => {
     const selectedTheme = e.target.value;
-    //aplicar el tema seleccionado al atributo de bootstrap en html
     document.documentElement.setAttribute('data-bs-theme', selectedTheme);
-    //guardar la preferencia del usuario en localStorage
     localStorage.setItem('theme', selectedTheme);
   });
 }
-const btnDelete= document.querySelectorAll('.btn-borrar');
+
+const btnDelete = document.querySelectorAll('.btn-borrar');
 if(btnDelete) {
   const btnArray = Array.from(btnDelete);
   btnArray.forEach((btn) => {
@@ -24,5 +22,5 @@ if(btnDelete) {
         e.preventDefault();
       }
     });
-  })
+  });
 }
