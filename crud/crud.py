@@ -72,6 +72,7 @@ def login():
             if (check_password_hash('scrypt:32768:8:1$' + rows[2],request.form.get("password"))):
                 session.permanent = True
                 session["user_id"]=request.form.get("usuario")
+                flash('reset_theme')
                 logging.info("se autenticó correctamente")
                 return redirect(url_for('index'))
             else:

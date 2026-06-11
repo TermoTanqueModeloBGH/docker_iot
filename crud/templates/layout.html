@@ -6,12 +6,18 @@
   <title>FLASK CRUD 1.6</title>
   <script>
     (function() {
-      {%if session.get("user_id") %}
+      {% with messages = get_flashed_messages() %} 
+        {% if 'reset_theme' in messages %}
+          localStorage.removeItem('theme');
+        {% endif %}
+      {% endwith %}
+
+      {% if session.get("user_id") %} 
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-bs-theme', savedTheme);
-      {%else%}
+      {% else %}
         document.documentElement.setAttribute('data-bs-theme', 'light');
-      {%endif%}
+      {% endif %}
     })();
   </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css">
