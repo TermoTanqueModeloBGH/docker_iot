@@ -32,13 +32,14 @@
       <a class="navbar-brand" href="#">CRUD</a>
       {% if session.get("user_id") %} 
       <div class="d-flex align-items-center">
+        <div class="nav-item pe-3 text-white">{{ session.get("user_id") }}</div>
+        
         <div class="me-3">
           <select id="theme-selector" class="form-select form-select-sm">
             <option value="light">Tema Claro</option>
             <option value="dark">Tema Oscuro</option>
           </select>
         </div>
-        <div class="nav-item pe-3 text-white">{{ session.get("user_id") }}</div>
         <a href="{{url_for('logout')}}" class="btn btn-secondary my-2 my-sm-0">Salir</a>
       </div>
       {% endif %}
