@@ -6,8 +6,12 @@
   <title>FLASK CRUD 1.6</title>
   <script>
     (function() {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      {%if session.get("user_id") %}
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      {%else%}
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      {%endif%}
     })();
   </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css">
