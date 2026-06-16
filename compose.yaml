@@ -145,6 +145,14 @@ services:
   node-red:
     image: nodered/node-red:latest
     container_name: node-red
+    environment:
+      - MQTT_USR=${MQTT_USR}
+      - MQTT_PASS=${MQTT_PASS}
+      - PUERTO_MQTTS=${PUERTO_MQTTS}
+      - SERVIDOR=${SERVIDOR}
+      - IP=${IP}
+      - MQTT_PORT=${MQTT_PORT}
+      - TB_TOKEN=${TB_TOKEN}
     ports:
       - 1880:1880
     volumes:
