@@ -4,18 +4,16 @@
 <head>
   <meta charset="UTF-8" />
   <title>FLASK CRUD 1.6</title>
-  
   <script>
-    (function() {
-      {% if session.get("user_id") %}
-        // Si tiene sesión, respetamos su última elección (sea claro u oscuro)
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-bs-theme', savedTheme);
-      {% else %}
-        // Si NO tiene sesión (Login/Registro), obligatoriamente Tema Claro
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-      {% endif %}
-    })();
+  (function() {
+    {% if session.get("user_id") %}
+      const userId = "{{ session.get('user_id') }}";
+      const savedTheme = localStorage.getItem('theme_' + userId) || 'light';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    {% else %}
+      document.documentElement.setAttribute('data-bs-theme', 'light');
+    {% endif %}
+  })();
   </script>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css">
@@ -42,7 +40,7 @@
         <div class="nav-item pe-3 text-white">{{ session.get("user_id") }}</div>
         
         <div class="me-3">
-          <select id="theme-selector" class="form-select form-select-sm">
+          <select id="theme-selector" class="form-select form-select-sm" data-user="{{ session.get('user_id') }}">
             <option value="light">Tema Claro</option>
             <option value="dark">Tema Oscuro</option>
           </select>
