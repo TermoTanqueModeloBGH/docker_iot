@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
+    <div class="card card-body">
+      <h3 class="mb-4">Control de Nodos MQTT</h3>
+      <form action="{{url_for('control')}}" method="POST">
+        
+        <div class="mb-4">
+          <label for="nodo" class="form-label fw-bold">Seleccionar Nodo de Destino:</label>
+          <select name="nodo" id="nodo" class="form-select" required>
+            {% for nodo in nodos %}
+              <option value="{{ nodo }}">{{ nodo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <hr>
+        
+        <div class="mb-4 pt-2">
+          <p class="fw-bold">Acción 1: Destello</p>
+          <button type="submit" name="accion" value="destello" class="btn btn-warning w-100">Enviar Comando de Destello</button>
+        </div>
+
+        <div class="mb-3">
+          <p class="fw-bold">Acción 2: Modificar Setpoint</p>
+          <div class="input-group">
+            <input type="number" step="0.1" name="setpoint_val" class="form-control" placeholder="Ingrese nuevo setpoint (ej: 25.5)">
+            <button type="submit" name="accion" value="setpoint" class="btn btn-primary">Enviar Setpoint</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

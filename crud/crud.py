@@ -4,6 +4,8 @@ import os, logging
 from functools import wraps
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
+import paho.mqtt.client as mqtt
+import ssl
 
 logging.basicConfig(format='%(asctime)s - CRUD - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -21,7 +23,6 @@ app.config["MYSQL_HOST"] = os.environ["MYSQL_HOST"]
 app.config['PERMANENT_SESSION_LIFETIME'] = 180
 mysql = MySQL(app)
 
-# Decorador para proteger rutas
 def require_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -32,13 +33,9 @@ def require_login(f):
 
 @app.route("/registrar", methods=["GET", "POST"])
 def registrar():
-    """Registrar usuario"""
     if request.method == "POST":
-        # Asegurar que se envió el usuario
         if not request.form.get("usuario"):
             return "el campo usuario es obligatorio"
-
-        # Asegurar que se envió la contraseña
         elif not request.form.get("password"):
             return "el campo contraseña es obligatorio"
 
@@ -89,70 +86,101 @@ def login():
 @require_login
 def index():
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM contactos')
+    cur.execute('SELECT * FROM nodos')
     datos = cur.fetchall()
     cur.close()
-    return render_template('index.html', contactos = datos)
+    return render_template('index.html', nodos=datos)
 
-@app.route('/add_contact', methods=['POST'])
+@app.route('/add_nodo', methods=['POST'])
 @require_login
-def add_contact():
+def add_nodo():
     if request.method == 'POST':
         nombre = request.form['nombre']
-        tel = request.form['tel']
-        email = request.form['email']
+        mac = request.form['mac']
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO contactos (nombre, tel, email) VALUES (%s,%s,%s)", (nombre, tel, email))
+        cur.execute("INSERT INTO nodos (mac, nombre) VALUES (%s,%s)", (mac, nombre))
         
         if mysql.connection.affected_rows():
-            flash('Se agregó un contacto')
-            logging.info("se agregó un contacto")
+            flash('Se agregó un dispositivo')
+            logging.info("se agregó un dispositivo")
             mysql.connection.commit()
             
         cur.close()
     return redirect(url_for('index'))
 
-@app.route('/borrar/<string:id>', methods = ['GET'])
+@app.route('/borrar/<string:id>', methods=['GET'])
 @require_login
-def borrar_contacto(id):
+def borrar_nodo(id):
     cur = mysql.connection.cursor()
-    cur.execute('DELETE FROM contactos WHERE id = %s', (id,))
+    cur.execute('DELETE FROM nodos WHERE id = %s', (id,))
     
     if mysql.connection.affected_rows():
-        flash('Se eliminó un contacto')
-        logging.info("se eliminó un contacto")
+        flash('Se eliminó un dispositivo')
+        logging.info("se eliminó un dispositivo")
         mysql.connection.commit()
         
     cur.close()
     return redirect(url_for('index'))
 
-@app.route('/editar/<id>', methods = ['GET'])
+@app.route('/editar/<id>', methods=['GET'])
 @require_login
-def conseguir_contacto(id):
+def conseguir_nodo(id):
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM contactos WHERE id = %s', (id,))
+    cur.execute('SELECT * FROM nodos WHERE id = %s', (id,))
     datos = cur.fetchone()
-    logging.info(datos)
     cur.close()
-    return render_template('editar-contacto.html', contacto = datos)
+    return render_template('editar-nodo.html', nodo=datos)
 
 @app.route('/actualizar/<id>', methods=['POST'])
 @require_login
-def actualizar_contacto(id):
+def actualizar_nodo(id):
     if request.method == 'POST':
         nombre = request.form['nombre']
-        tel = request.form['tel']
-        email = request.form['email']
+        mac = request.form['mac']
         cur = mysql.connection.cursor()
-        cur.execute("UPDATE contactos SET nombre=%s, tel=%s, email=%s WHERE id=%s", (nombre, tel, email, id))
+        cur.execute("UPDATE nodos SET mac=%s, nombre=%s WHERE id=%s", (mac, nombre, id))
         
         if mysql.connection.affected_rows():
-            flash('Se actualizó un contacto')
-            logging.info("se actualizó un contacto")
+            flash('Se actualizó un dispositivo')
+            logging.info("se actualizó un dispositivo")
             mysql.connection.commit()
             
         cur.close()
     return redirect(url_for('index'))
+
+@app.route('/control', methods=['GET', 'POST'])
+@require_login
+def control():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT mac FROM nodos")
+    nodos = [row[0] for row in cur.fetchall()] 
+    cur.close()
+
+    if request.method == 'POST':
+        nodo = request.form.get('nodo')
+        accion = request.form.get('accion')
+        
+        client = mqtt.Client()
+        client.tls_set(cert_reqs=ssl.CERT_NONE) 
+        client.username_pw_set(os.environ["MQTT_USR"], os.environ["MQTT_PASS"])
+        client.connect(os.environ["SERVIDOR"], int(os.environ["PUERTO_MQTTS"]))
+
+        if accion == 'destello':
+            client.publish(f"{nodo}/destello", "1")
+            flash(f"Comando de destello enviado al nodo {nodo}")
+            logging.info(f"Destello enviado a {nodo}")
+            
+        elif accion == 'setpoint':
+            valor = request.form.get('setpoint_val')
+            if valor:
+                client.publish(f"{nodo}/setpoint", valor)
+                flash(f"Setpoint {valor} enviado al nodo {nodo}")
+                logging.info(f"Setpoint {valor} enviado a {nodo}")
+        
+        client.disconnect()
+        return redirect(url_for('control'))
+
+    return render_template('control.html', nodos=nodos)
 
 @app.route("/logout")
 @require_login

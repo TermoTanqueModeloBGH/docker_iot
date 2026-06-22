@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
-
 <head>
   <meta charset="UTF-8" />
-  <title>FLASK CRUD 1.6</title>
+  <title>FLASK CRUD - Nodos MQTT</title>
+  
   <script>
-  (function() {
-    {% if session.get("user_id") %}
-      const userId = "{{ session.get('user_id') }}";
-      const savedTheme = localStorage.getItem('theme_' + userId) || 'light';
-      document.documentElement.setAttribute('data-bs-theme', savedTheme);
-    {% else %}
-      document.documentElement.setAttribute('data-bs-theme', 'light');
-    {% endif %}
-  })();
+    (function() {
+      {% if session.get("user_id") %}
+        const userId = "{{ session.get('user_id') }}";
+        const savedTheme = localStorage.getItem('theme_' + userId) || 'light';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      {% else %}
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      {% endif %}
+    })();
   </script>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css">
@@ -33,19 +33,21 @@
 
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">CRUD</a>
+      <a class="navbar-brand" href="{{url_for('index')}}">Sistema IoT</a>
       
       {% if session.get("user_id") %} 
       <div class="d-flex align-items-center">
         <div class="nav-item pe-3 text-white">{{ session.get("user_id") }}</div>
         
+        <a href="{{url_for('control')}}" class="btn btn-info btn-sm me-3">Control Nodos</a>
+
         <div class="me-3">
           <select id="theme-selector" class="form-select form-select-sm" data-user="{{ session.get('user_id') }}">
             <option value="light">Tema Claro</option>
             <option value="dark">Tema Oscuro</option>
           </select>
         </div>
-        <a href="{{url_for('logout')}}" class="btn btn-secondary my-2 my-sm-0">Salir</a>
+        <a href="{{url_for('logout')}}" class="btn btn-secondary btn-sm">Salir</a>
       </div>
       {% endif %}
     </div>
@@ -56,10 +58,7 @@
     {% endblock %}
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
-          integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
-          crossorigin="anonymous"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   <script src="{{url_for('static', filename='js/main.js')}}"></script>
 </body>
 </html>
