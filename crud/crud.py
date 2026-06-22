@@ -166,14 +166,16 @@ def control():
         client.connect(os.environ["SERVIDOR"], int(os.environ["PUERTO_MQTTS"]))
 
         if accion == 'destello':
-            client.publish(f"{nodo}/destello", "1")
+            msg = client.publish(f"{nodo}/destello", "1")
+            msg.wait_for_publish()
             flash(f"Comando de destello enviado al nodo {nodo}")
             logging.info(f"Destello enviado a {nodo}")
             
         elif accion == 'setpoint':
             valor = request.form.get('setpoint_val')
             if valor:
-                client.publish(f"{nodo}/setpoint", valor)
+                msg = client.publish(f"{nodo}/setpoint", valor)
+                msg.wait_for_publish()
                 flash(f"Setpoint {valor} enviado al nodo {nodo}")
                 logging.info(f"Setpoint {valor} enviado a {nodo}")
         
